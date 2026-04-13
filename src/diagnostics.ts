@@ -273,7 +273,7 @@ export class VrlDiagnosticsProvider {
     }
 
     private checkDocumentSyntax(
-        text: string,
+        _text: string,
         lines: string[],
         diagnostics: vscode.Diagnostic[]
     ): void {
@@ -281,83 +281,68 @@ export class VrlDiagnosticsProvider {
         let parenCount = 0;
         let bracketCount = 0;
 
-        let currentLine = 0;
-        let currentChar = 0;
+        // Process line by line, stripping string literals first so that
+        // braces/parens/brackets inside strings are not counted.
+        for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+            const raw = lines[lineNum];
+            // Strip double-quoted strings, single-quoted strings and VRL regex literals.
+            const stripped = raw
+                .replace(/r"[^"]*"/g, 'r""')
+                .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+                .replace(/'(?:[^'\\]|\\.)*'/g, "''");
 
-        for (let i = 0; i < text.length; i++) {
-            const char = text[i];
-
-            if (char === '\n') {
-                currentLine++;
-                currentChar = 0;
-                continue;
-            }
-            currentChar++;
-
-            switch (char) {
-                case '{':
-                    braceCount++;
-                    break;
-                case '}':
-                    braceCount--;
-                    if (braceCount < 0) {
-                        const diagnostic = new vscode.Diagnostic(
-                            new vscode.Range(
-                                currentLine,
-                                currentChar - 1,
-                                currentLine,
-                                currentChar
-                            ),
-                            'Unexpected closing brace - no matching opening brace',
-                            vscode.DiagnosticSeverity.Error
-                        );
-                        diagnostic.code = 'unmatched-closing-brace';
-                        diagnostics.push(diagnostic);
-                        braceCount = 0;
-                    }
-                    break;
-                case '(':
-                    parenCount++;
-                    break;
-                case ')':
-                    parenCount--;
-                    if (parenCount < 0) {
-                        const diagnostic = new vscode.Diagnostic(
-                            new vscode.Range(
-                                currentLine,
-                                currentChar - 1,
-                                currentLine,
-                                currentChar
-                            ),
-                            'Unexpected closing parenthesis - no matching opening parenthesis',
-                            vscode.DiagnosticSeverity.Error
-                        );
-                        diagnostic.code = 'unmatched-closing-paren';
-                        diagnostics.push(diagnostic);
-                        parenCount = 0;
-                    }
-                    break;
-                case '[':
-                    bracketCount++;
-                    break;
-                case ']':
-                    bracketCount--;
-                    if (bracketCount < 0) {
-                        const diagnostic = new vscode.Diagnostic(
-                            new vscode.Range(
-                                currentLine,
-                                currentChar - 1,
-                                currentLine,
-                                currentChar
-                            ),
-                            'Unexpected closing bracket - no matching opening bracket',
-                            vscode.DiagnosticSeverity.Error
-                        );
-                        diagnostic.code = 'unmatched-closing-bracket';
-                        diagnostics.push(diagnostic);
-                        bracketCount = 0;
-                    }
-                    break;
+            for (let col = 0; col < stripped.length; col++) {
+                const char = stripped[col];
+                switch (char) {
+                    case '{':
+                        braceCount++;
+                        break;
+                    case '}':
+                        braceCount--;
+                        if (braceCount < 0) {
+                            const diagnostic = new vscode.Diagnostic(
+                                new vscode.Range(lineNum, col, lineNum, col + 1),
+                                'Unexpected closing brace - no matching opening brace',
+                                vscode.DiagnosticSeverity.Error
+                            );
+                            diagnostic.code = 'unmatched-closing-brace';
+                            diagnostics.push(diagnostic);
+                            braceCount = 0;
+                        }
+                        break;
+                    case '(':
+                        parenCount++;
+                        break;
+                    case ')':
+                        parenCount--;
+                        if (parenCount < 0) {
+                            const diagnostic = new vscode.Diagnostic(
+                                new vscode.Range(lineNum, col, lineNum, col + 1),
+                                'Unexpected closing parenthesis - no matching opening parenthesis',
+                                vscode.DiagnosticSeverity.Error
+                            );
+                            diagnostic.code = 'unmatched-closing-paren';
+                            diagnostics.push(diagnostic);
+                            parenCount = 0;
+                        }
+                        break;
+                    case '[':
+                        bracketCount++;
+                        break;
+                    case ']':
+                        bracketCount--;
+                        if (bracketCount < 0) {
+                            const diagnostic = new vscode.Diagnostic(
+                                new vscode.Range(lineNum, col, lineNum, col + 1),
+                                'Unexpected closing bracket - no matching opening bracket',
+                                vscode.DiagnosticSeverity.Error
+                            );
+                            diagnostic.code = 'unmatched-closing-bracket';
+                            diagnostics.push(diagnostic);
+                            bracketCount = 0;
+                        }
+                        break;
+                }
             }
         }
 
