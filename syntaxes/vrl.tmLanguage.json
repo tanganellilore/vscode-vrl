@@ -49,15 +49,19 @@
             },
             "patterns": [
                 {
+                    "include": "#function"
+                },
+                {
                     "include": "#value"
                 },
                 {
-                    "include": "#comma"
+                    "include": "#operator"
                 },
                 {
-                    "comment": "Illegal separator",
-                    "name": "invalid.illegal.array-separator.vrl",
-                    "match": "[^\\s\\]]"
+                    "include": "#path"
+                },
+                {
+                    "include": "#comma"
                 },
                 {
                     "comment": "Comment",
@@ -162,7 +166,7 @@
         "object": {
             "comment": "Object value",
             "name": "meta.structure.dictionary.vrl",
-            "begin": "[=|:](\\s?)+\\{",
+            "begin": "[=:](\\s?)+\\{",
             "beginCaptures": {
                 "0": {
                     "name": "punctuation.definition.dictionary.begin.vrl"
@@ -234,11 +238,13 @@
                     "include": "#value"
                 },
                 {
-                    "include": "#variable"
+                    "include": "#operator"
                 },
                 {
-                    "match": "[^\\s,]",
-                    "name": "invalid.illegal.expected-dictionary-separator.vrl"
+                    "include": "#path"
+                },
+                {
+                    "include": "#variable"
                 },
                 {
                     "include": "#comment"
